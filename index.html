@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SyncKhafi | Enterprise B2B Ecosystem Platform</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        khafi: {
+                            base: '#050505',    // Deep black background
+                            surface: '#111111', // Slightly lighter cards
+                            border: '#222222',  // Subtle borders
+                            accent: '#D4FF00',  // Neon yellow/green from logo
+                            accentDim: 'rgba(212, 255, 0, 0.1)',
+                            text: '#E0E0E0',
+                            muted: '#888888'
+                        }
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                        'mesh': 'radial-gradient(at 40% 20%, rgba(212, 255, 0, 0.05) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(255, 255, 255, 0.02) 0px, transparent 50%)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #050505;
+            color: #E0E0E0;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050505;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #222;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D4FF00;
+        }
+
+        /* Utility Classes for Effects */
+        .glass-panel {
+            background: rgba(17, 17, 17, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .text-glow {
+            text-shadow: 0 0 20px rgba(212, 255, 0, 0.3);
+        }
+
+        /* Reveal Animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Tab Transitions */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Map Node Pulse */
+        .map-node {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #D4FF00;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px rgba(212, 255, 0, 0.8);
+        }
+        .map-node::before {
+            content: '';
+            position: absolute;
+            top: -4px; left: -4px; right: -4px; bottom: -4px;
+            border-radius: 50%;
+            border: 1px solid #D4FF00;
+            animation: pulse 2s linear infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        /* 3D Canvas Container */
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none; /* Let clicks pass through */
+        }
+    </style>
+</head>
+<body class="antialiased font-sans selection:bg-khafi-accent selection:text-black">
+
+    <nav class="fixed w-full z-50 transition-all duration-300" id="navbar">
+        <div class="absolute inset-0 glass-panel border-b border-khafi-border"></div>
+        <div class="max-w-7xl mx-auto px-6 relative">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center cursor-pointer group">
+                    <!-- Inline SVG Logo to guarantee visibility and exact match -->
+                    <svg viewBox="0 0 360 90" class="h-12 md:h-14 w-auto transform group-hover:scale-105 transition-transform duration-300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Logo Mark (The Node/Eye) -->
+                        <g transform="translate(15, 10)">
+                            <!-- Outer Donut -->
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M35 10C21.1929 10 10 21.1929 10 35C10 48.8071 21.1929 60 35 60C48.8071 60 60 48.8071 60 35C60 21.1929 48.8071 10 35 10ZM35 22C27.8203 22 22 27.8203 22 35C22 42.1797 27.8203 48 35 48C42.1797 48 48 42.1797 48 35C48 27.8203 42.1797 22 35 22Z" fill="#D4FF00"/>
+                            <!-- Top Left Swoosh -->
+                            <path d="M35 10 C 20 10, 5 18, -5 30" stroke="#D4FF00" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+                            <circle cx="-5" cy="30" r="4" fill="#D4FF00"/>
+                            <!-- Bottom Right Swoosh -->
+                            <path d="M35 60 C 50 60, 65 52, 75 40" stroke="#D4FF00" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+                            <circle cx="75" cy="40" r="4" fill="#D4FF00"/>
+                        </g>
+                        <!-- Text "SyncKhafi" -->
+                        <text x="105" y="52" font-family="'Space Grotesk', sans-serif" font-size="44" font-weight="700" fill="#FFFFFF" class="drop-shadow-md">SyncKhafi</text>
+                        <!-- Text "Technologies." -->
+                        <text x="110" y="74" font-family="'Inter', sans-serif" font-size="13" font-weight="500" letter-spacing="0.45em" fill="#D4FF00">Technologies.</text>
+                    </svg>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="text-sm font-medium text-white hover:text-khafi-accent transition-colors">Home</a>
+                    <a href="#capabilities" class="text-sm font-medium text-khafi-muted hover:text-white transition-colors">Core Capabilities</a>
+                    <a href="#ecosystem" class="text-sm font-medium text-khafi-muted hover:text-white transition-colors">Ecosystem</a>
+                    <a href="#leadership" class="text-sm font-medium text-khafi-muted hover:text-white transition-colors">Inside SyncKhafi</a>
+                </div>
+
+                <!-- CTA Button -->
+                <div class="hidden md:block">
+                    <a href="#contact" class="inline-flex items-center justify-center px-6 py-2.5 text-sm font-medium text-black bg-khafi-accent rounded-full hover:bg-white transition-all duration-300 hover:shadow-[0_0_20px_rgba(212,255,0,0.4)]">
+                        Let's Sync
+                    </a>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden flex items-center">
+                    <button class="text-white hover:text-khafi-accent">
+                        <i class="ph ph-list text-3xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Section 1: Hero Command -->
+        <section class="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+            <!-- 3D Background Canvas -->
+            <div id="canvas-container"></div>
+            
+            <!-- Overlay Gradient for better text readability -->
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-khafi-base/50 to-khafi-base z-10"></div>
+
+            <div class="relative z-20 max-w-7xl mx-auto px-6 text-center">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-khafi-accent/30 text-khafi-accent text-xs font-semibold tracking-widest uppercase mb-8 reveal">
+                    <span class="w-2 h-2 rounded-full bg-khafi-accent animate-pulse"></span>
+                    Enterprise B2B Ecosystem Platform
+                </div>
+                
+                <h1 class="text-5xl md:text-7xl lg:text-8xl font-display font-bold text-white leading-[1.1] tracking-tight mb-8 reveal" style="transition-delay: 0.1s;">
+                    Syncing Minds.<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-khafi-accent text-glow">Shaping Futures.</span>
+                </h1>
+                
+                <p class="mt-6 max-w-3xl mx-auto text-lg md:text-xl text-khafi-muted leading-relaxed reveal" style="transition-delay: 0.2s;">
+                    Unleashing collective intelligence through enterprise-grade AI and infrastructure execution. We are the nexus where global innovation meets regional deployment.
+                </p>
+                
+                <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center reveal" style="transition-delay: 0.3s;">
+                    <a href="#ecosystem" class="w-full sm:w-auto px-8 py-4 bg-khafi-accent text-black font-semibold rounded-full hover:bg-white transition-all hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(212,255,0,0.3)] flex items-center justify-center gap-2">
+                        Explore Ecosystem <i class="ph ph-arrow-right font-bold"></i>
+                    </a>
+                    <a href="#contact" class="w-full sm:w-auto px-8 py-4 bg-transparent border border-khafi-border text-white font-semibold rounded-full hover:border-khafi-accent hover:text-khafi-accent transition-all hover:-translate-y-1 flex items-center justify-center">
+                        Partner With Us
+                    </a>
+                </div>
+            </div>
+
+            <!-- Scroll Indicator -->
+            <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-20 flex flex-col items-center gap-2 opacity-50 animate-bounce">
+                <span class="text-xs uppercase tracking-widest text-khafi-muted">Scroll</span>
+                <i class="ph ph-caret-down text-white"></i>
+            </div>
+        </section>
+
+        <!-- Section 2: The Anchor -->
+        <section class="py-24 relative bg-khafi-base z-20" id="pillars">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="mb-16 reveal">
+                    <h2 class="text-3xl md:text-4xl font-display font-bold text-white mb-4">Strategic Positioning</h2>
+                    <p class="text-khafi-muted max-w-2xl">Targeting non-commoditized market layers through four distinct architectural positions.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Pillar 1 -->
+                    <div class="group relative glass-panel p-8 rounded-2xl border border-khafi-border hover:border-khafi-accent/50 transition-all duration-500 overflow-hidden reveal">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-khafi-accent to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                        <i class="ph ph-intersect text-4xl text-khafi-accent mb-6"></i>
+                        <h3 class="text-xl font-display font-semibold text-white mb-2">The Integrator</h3>
+                        <p class="text-khafi-muted text-sm leading-relaxed max-h-0 opacity-0 group-hover:max-h-32 group-hover:opacity-100 transition-all duration-500 ease-in-out">
+                            Combining talent, capital, technology, and partnerships into holistic solutions. Synchronizing diverse stakeholders for guaranteed execution.
+                        </p>
+                        <div class="mt-4 text-xs font-mono text-khafi-muted group-hover:opacity-0 transition-opacity">Hover to expand</div>
+                    </div>
+
+                    <!-- Pillar 2 -->
+                    <div class="group relative glass-panel p-8 rounded-2xl border border-khafi-border hover:border-khafi-accent/50 transition-all duration-500 overflow-hidden reveal" style="transition-delay: 0.1s;">
+                        <i class="ph ph-waves text-4xl text-khafi-accent mb-6"></i>
+                        <h3 class="text-xl font-display font-semibold text-white mb-2">Blue Ocean Disruptor</h3>
+                        <p class="text-khafi-muted text-sm leading-relaxed max-h-0 opacity-0 group-hover:max-h-32 group-hover:opacity-100 transition-all duration-500 ease-in-out">
+                            Creating new market spaces. Systemic overhaul of vital production sectors via AI augmentation and deep-tech applications.
+                        </p>
+                        <div class="mt-4 text-xs font-mono text-khafi-muted group-hover:opacity-0 transition-opacity">Hover to expand</div>
+                    </div>
+
+                    <!-- Pillar 3 -->
+                    <div class="group relative glass-panel p-8 rounded-2xl border border-khafi-border hover:border-khafi-accent/50 transition-all duration-500 overflow-hidden reveal" style="transition-delay: 0.2s;">
+                        <i class="ph ph-globe-hemisphere-west text-4xl text-khafi-accent mb-6"></i>
+                        <h3 class="text-xl font-display font-semibold text-white mb-2">Local-Global Connector</h3>
+                        <p class="text-khafi-muted text-sm leading-relaxed max-h-0 opacity-0 group-hover:max-h-32 group-hover:opacity-100 transition-all duration-500 ease-in-out">
+                            Bridging East African talent with global markets. The inevitable node for Pan-African scaling and cross-border investment.
+                        </p>
+                        <div class="mt-4 text-xs font-mono text-khafi-muted group-hover:opacity-0 transition-opacity">Hover to expand</div>
+                    </div>
+
+                    <!-- Pillar 4 -->
+                    <div class="group relative glass-panel p-8 rounded-2xl border border-khafi-border hover:border-khafi-accent/50 transition-all duration-500 overflow-hidden reveal" style="transition-delay: 0.3s;">
+                        <i class="ph ph-hexagon text-4xl text-khafi-accent mb-6"></i>
+                        <h3 class="text-xl font-display font-semibold text-white mb-2">Ecosystem Builder</h3>
+                        <p class="text-khafi-muted text-sm leading-relaxed max-h-0 opacity-0 group-hover:max-h-32 group-hover:opacity-100 transition-all duration-500 ease-in-out">
+                            Orchestrating partnerships and shared sovereign infrastructure (AI compute, Data Centers, SOC) to support venture building.
+                        </p>
+                        <div class="mt-4 text-xs font-mono text-khafi-muted group-hover:opacity-0 transition-opacity">Hover to expand</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Metrics of Trust (Dual Edge Leadership) -->
+        <section class="py-24 bg-khafi-surface relative border-y border-khafi-border">
+            <div class="absolute inset-0 bg-mesh opacity-20"></div>
+            <div class="max-w-7xl mx-auto px-6 relative z-10">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    <div class="reveal">
+                        <h2 class="text-khafi-accent font-mono text-sm tracking-widest uppercase mb-4">Institutional Trust</h2>
+                        <h3 class="text-4xl md:text-5xl font-display font-bold text-white mb-6 leading-tight">Dual Edge Leadership</h3>
+                        <p class="text-khafi-muted text-lg mb-8 leading-relaxed">
+                            A rare blend of enterprise-grade technical acumen and regional market expertise. We possess the legacy background necessary to navigate high-stakes environments and deliver guaranteed execution on national-scale projects.
+                        </p>
+                        <div class="inline-flex items-center gap-3 px-5 py-3 rounded-lg bg-khafi-base border border-khafi-border">
+                            <i class="ph-fill ph-shield-check text-khafi-accent text-xl"></i>
+                            <span class="text-sm font-medium text-white">Trusted by High-Stakes Organizations (e.g., INSA, Oromia Regional State)</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 reveal" style="transition-delay: 0.2s;">
+                        <!-- Metric 1 -->
+                        <div class="glass-panel p-10 rounded-2xl border-l-4 border-l-khafi-accent flex flex-col justify-center relative overflow-hidden">
+                            <div class="absolute -right-10 -bottom-10 text-9xl text-white opacity-5 font-display font-bold select-none">35</div>
+                            <div class="text-6xl font-display font-bold text-white mb-2 tracking-tighter">35<span class="text-khafi-accent">+</span></div>
+                            <div class="text-sm uppercase tracking-widest text-khafi-muted font-semibold">Years Tech Leadership</div>
+                        </div>
+                        
+                        <!-- Metric 2 -->
+                        <div class="glass-panel p-10 rounded-2xl border-l-4 border-l-white flex flex-col justify-center relative overflow-hidden">
+                            <div class="absolute -right-10 -bottom-10 text-9xl text-white opacity-5 font-display font-bold select-none">30</div>
+                            <div class="text-6xl font-display font-bold text-white mb-2 tracking-tighter">30<span class="text-khafi-accent">+</span></div>
+                            <div class="text-sm uppercase tracking-widest text-khafi-muted font-semibold">Years Business Execution</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: The Core Framework Matrix -->
+        <section class="py-32 bg-khafi-base relative" id="capabilities">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center mb-16 reveal">
+                    <h2 class="text-3xl md:text-5xl font-display font-bold text-white mb-6">Core Execution Matrix</h2>
+                    <p class="text-khafi-muted max-w-2xl mx-auto text-lg">Demystifying complex offerings into a structured architecture for immediate deployment.</p>
+                </div>
+
+                <!-- Tabs Container -->
+                <div class="glass-panel rounded-3xl border border-khafi-border p-2 md:p-4 reveal">
+                    <!-- Tab Headers -->
+                    <div class="flex flex-col md:flex-row gap-2 border-b border-khafi-border pb-4 mb-8">
+                        <button class="tab-btn w-full md:w-1/3 text-left px-6 py-4 rounded-xl transition-all duration-300 font-display font-semibold text-lg flex items-center justify-between group active bg-khafi-surface border border-khafi-accent/30 text-white" data-target="tab1">
+                            <span class="flex items-center gap-3">
+                                <span class="text-xs font-mono text-khafi-accent">01.</span>
+                                Products & Systems
+                            </span>
+                            <i class="ph ph-caret-right opacity-0 group-[.active]:opacity-100 text-khafi-accent transition-opacity"></i>
+                        </button>
+                        <button class="tab-btn w-full md:w-1/3 text-left px-6 py-4 rounded-xl transition-all duration-300 font-display font-semibold text-lg text-khafi-muted hover:bg-khafi-surface/50 hover:text-white group flex items-center justify-between" data-target="tab2">
+                            <span class="flex items-center gap-3">
+                                <span class="text-xs font-mono group-hover:text-khafi-accent transition-colors">02.</span>
+                                Deep-Tech Disruption
+                            </span>
+                            <i class="ph ph-caret-right opacity-0 group-[.active]:opacity-100 text-khafi-accent transition-opacity"></i>
+                        </button>
+                        <button class="tab-btn w-full md:w-1/3 text-left px-6 py-4 rounded-xl transition-all duration-300 font-display font-semibold text-lg text-khafi-muted hover:bg-khafi-surface/50 hover:text-white group flex items-center justify-between" data-target="tab3">
+                            <span class="flex items-center gap-3">
+                                <span class="text-xs font-mono group-hover:text-khafi-accent transition-colors">03.</span>
+                                Global Outsourcing
+                            </span>
+                            <i class="ph ph-caret-right opacity-0 group-[.active]:opacity-100 text-khafi-accent transition-opacity"></i>
+                        </button>
+                    </div>
+
+                    <!-- Tab Contents -->
+                    <div class="px-2 md:px-6 pb-6 min-h-[300px]">
+                        <!-- Content 1 -->
+                        <div id="tab1" class="tab-content active">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                                <div>
+                                    <h3 class="text-2xl font-bold text-white mb-4">Engineering & Infrastructure</h3>
+                                    <p class="text-khafi-muted mb-6">Robust integration systems designed for scale and security. We build the foundational layers that power modern enterprises and governments.</p>
+                                    <ul class="space-y-4">
+                                        <li class="flex items-start gap-3"><i class="ph-fill ph-check-circle text-khafi-accent mt-1"></i><span class="text-gray-300">Integrated Engineering Frameworks</span></li>
+                                        <li class="flex items-start gap-3"><i class="ph-fill ph-check-circle text-khafi-accent mt-1"></i><span class="text-gray-300">Payment & Financial Solutions</span></li>
+                                        <li class="flex items-start gap-3"><i class="ph-fill ph-check-circle text-khafi-accent mt-1"></i><span class="text-gray-300">SCADA & IoT Implementations</span></li>
+                                        <li class="flex items-start gap-3"><i class="ph-fill ph-check-circle text-khafi-accent mt-1"></i><span class="text-gray-300">Data Warehouse & Analytics</span></li>
+                                    </ul>
+                                </div>
+                                <div class="bg-khafi-surface rounded-xl p-8 border border-khafi-border flex items-center justify-center">
+                                     <i class="ph-duotone ph-cpu text-9xl text-khafi-accent opacity-80"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Content 2 -->
+                        <div id="tab2" class="tab-content">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                                <div class="order-2 md:order-1 bg-khafi-surface rounded-xl p-8 border border-khafi-border flex items-center justify-center">
+                                    <i class="ph-duotone ph-atom text-9xl text-khafi-accent opacity-80 animate-[spin_10s_linear_infinite]"></i>
+                               </div>
+                                <div class="order-1 md:order-2">
+                                    <h3 class="text-2xl font-bold text-white mb-4">Systemic Sector Overhaul</h3>
+                                    <p class="text-khafi-muted mb-6">Applying AI augmentation and cutting-edge tech to traditional industries to unlock unprecedented efficiency and new market spaces.</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        <span class="px-3 py-1 rounded-full bg-khafi-base border border-khafi-border text-xs text-white">Agriculture</span>
+                                        <span class="px-3 py-1 rounded-full bg-khafi-base border border-khafi-border text-xs text-white">Energy & Renewables</span>
+                                        <span class="px-3 py-1 rounded-full bg-khafi-base border border-khafi-border text-xs text-white">Healthcare & Biotech</span>
+                                        <span class="px-3 py-1 rounded-full bg-khafi-base border border-khafi-border text-xs text-white">Mining</span>
+                                        <span class="px-3 py-1 rounded-full bg-khafi-base border border-khafi-border text-xs text-white">National Systems</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Content 3 -->
+                        <div id="tab3" class="tab-content">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                                <div>
+                                    <h3 class="text-2xl font-bold text-white mb-4">Ecosystem & Ventures</h3>
+                                    <p class="text-khafi-muted mb-6">The connective tissue for Pan-African scaling. We provide the shared infrastructure and strategic pathways for global expansion.</p>
+                                    <ul class="space-y-4">
+                                        <li class="flex items-start gap-3"><i class="ph-fill ph-check-circle text-khafi-accent mt-1"></i><span class="text-gray-300">High-Performance Call Centers</span></li>
+                                        <li class="flex items-start gap-3"><i class="ph-fill ph-check-circle text-khafi-accent mt-1"></i><span class="text-gray-300">Custom Software & AI R&D</span></li>
+                                        <li class="flex items-start gap-3"><i class="ph-fill ph-check-circle text-khafi-accent mt-1"></i><span class="text-gray-300">Shared Infra: AI Compute, Data Centers</span></li>
+                                        <li class="flex items-start gap-3"><i class="ph-fill ph-check-circle text-khafi-accent mt-1"></i><span class="text-gray-300">Go-to-Market Strategy for Startups</span></li>
+                                    </ul>
+                                </div>
+                                <div class="bg-khafi-surface rounded-xl p-8 border border-khafi-border flex items-center justify-center relative overflow-hidden">
+                                     <i class="ph-duotone ph-network text-9xl text-khafi-accent opacity-80 relative z-10"></i>
+                                     <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,255,0,0.1)_0,transparent_70%)]"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Global Footprint Map -->
+        <section class="py-32 bg-[#020202] relative overflow-hidden border-t border-khafi-border" id="ecosystem">
+            <!-- Stylized Abstract Grid Background representing the globe/network -->
+            <div class="absolute inset-0 opacity-10" style="background-image: linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px); background-size: 40px 40px; transform: perspective(500px) rotateX(60deg) scale(2); transform-origin: top center;"></div>
+            
+            <div class="max-w-7xl mx-auto px-6 relative z-10">
+                <div class="text-center mb-16 reveal">
+                    <h2 class="text-3xl md:text-5xl font-display font-bold text-white mb-6">Global Node Network</h2>
+                    <p class="text-khafi-muted max-w-2xl mx-auto text-lg">Operating across key strategic theaters to synchronize local execution with global capital and technology.</p>
+                </div>
+
+                <!-- Abstract Map Container -->
+                <div class="relative w-full max-w-4xl mx-auto aspect-video glass-panel rounded-3xl border border-khafi-border p-4 reveal flex items-center justify-center overflow-hidden">
+                    
+                    <!-- Base World SVG outline (simplified, abstract) -->
+                    <svg viewBox="0 0 1000 500" class="w-full h-full opacity-20" fill="none" stroke="#555" stroke-width="2" stroke-linejoin="round">
+                        <!-- Highly abstracted shapes representing continents -->
+                        <path d="M 200 100 Q 300 50 400 100 T 500 150 Q 400 200 300 150 Z" /> <!-- NA -->
+                        <path d="M 250 250 Q 350 200 400 300 T 300 450 Q 200 400 250 250 Z" /> <!-- SA -->
+                        <path d="M 450 150 Q 550 100 650 150 T 600 250 Q 500 200 450 150 Z" /> <!-- Europe -->
+                        <path d="M 450 250 Q 550 250 600 350 T 500 450 Q 400 350 450 250 Z" /> <!-- Africa -->
+                        <path d="M 650 100 Q 800 50 900 150 T 800 350 Q 650 250 650 100 Z" /> <!-- Asia -->
+                    </svg>
+
+                    <!-- Nodes -->
+                    <!-- Africa (HQ Node) -->
+                    <div class="absolute top-[60%] left-[52%] group">
+                        <div class="map-node !bg-white !w-4 !h-4 !shadow-[0_0_20px_#fff]"></div>
+                        <div class="absolute top-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-khafi-base border border-white/20 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-20">Africa (HQ)</div>
+                    </div>
+                    
+                    <!-- Middle East -->
+                    <div class="absolute top-[45%] left-[58%] group">
+                        <div class="map-node"></div>
+                        <div class="absolute top-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-khafi-base border border-khafi-accent/30 text-khafi-accent text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-20">Middle East</div>
+                    </div>
+
+                    <!-- Europe -->
+                    <div class="absolute top-[30%] left-[50%] group">
+                        <div class="map-node"></div>
+                        <div class="absolute top-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-khafi-base border border-khafi-accent/30 text-khafi-accent text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-20">Europe</div>
+                    </div>
+
+                    <!-- Asia -->
+                    <div class="absolute top-[35%] left-[75%] group">
+                        <div class="map-node"></div>
+                        <div class="absolute top-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-khafi-base border border-khafi-accent/30 text-khafi-accent text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-20">Asia</div>
+                    </div>
+
+                    <!-- North America -->
+                    <div class="absolute top-[25%] left-[25%] group">
+                        <div class="map-node"></div>
+                        <div class="absolute top-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-khafi-base border border-khafi-accent/30 text-khafi-accent text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-20">North America</div>
+                    </div>
+                    
+                    <!-- Connecting lines (Abstract SVG overlay) -->
+                    <svg class="absolute inset-0 w-full h-full z-0 opacity-30" pointer-events="none">
+                        <line x1="52%" y1="60%" x2="58%" y2="45%" stroke="#D4FF00" stroke-width="1" stroke-dasharray="4" class="animate-[dash_20s_linear_infinite]" />
+                        <line x1="52%" y1="60%" x2="50%" y2="30%" stroke="#D4FF00" stroke-width="1" stroke-dasharray="4" class="animate-[dash_20s_linear_infinite]" />
+                        <line x1="52%" y1="60%" x2="75%" y2="35%" stroke="#D4FF00" stroke-width="1" stroke-dasharray="4" class="animate-[dash_20s_linear_infinite]" />
+                        <line x1="50%" y1="30%" x2="25%" y2="25%" stroke="#D4FF00" stroke-width="1" stroke-dasharray="4" class="animate-[dash_20s_linear_infinite]" />
+                    </svg>
+                    <style>
+                        @keyframes dash {
+                            to { stroke-dashoffset: 1000; }
+                        }
+                    </style>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Final Terminal CTA -->
+        <section class="py-32 relative bg-khafi-base overflow-hidden" id="contact">
+            <!-- Background Accent -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-khafi-accent rounded-full blur-[150px] opacity-5 pointer-events-none"></div>
+
+            <div class="max-w-4xl mx-auto px-6 text-center relative z-10 reveal">
+                <i class="ph-duotone ph-terminal-window text-6xl text-khafi-accent mb-6"></i>
+                <h2 class="text-4xl md:text-6xl font-display font-bold text-white mb-8 leading-tight">
+                    Synchronize your ambition with <br> <span class="text-transparent bg-clip-text bg-gradient-to-r from-khafi-accent to-white">world-class technical precision.</span>
+                </h2>
+                
+                <!-- Simplified routing intent for homepage context -->
+                <div class="glass-panel p-2 md:p-4 rounded-full inline-flex flex-col sm:flex-row items-center gap-4 border border-khafi-border max-w-2xl w-full mx-auto">
+                    <select class="bg-transparent text-white border-none focus:ring-0 text-sm md:text-base cursor-pointer py-3 px-4 w-full sm:w-auto flex-grow appearance-none font-medium">
+                        <option value="" disabled selected class="bg-khafi-base text-gray-400">Select your operational profile...</option>
+                        <option value="gov" class="bg-khafi-base text-white">Enterprise / Government Entity</option>
+                        <option value="startup" class="bg-khafi-base text-white">Investor / Startup Ecosystem</option>
+                        <option value="partner" class="bg-khafi-base text-white">International Partner</option>
+                    </select>
+                    <button class="w-full sm:w-auto bg-khafi-accent text-black font-bold py-3 px-8 rounded-full hover:bg-white transition-colors whitespace-nowrap flex items-center justify-center gap-2">
+                        Initialize Sync <i class="ph-bold ph-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-[#020202] border-t border-khafi-border py-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-2 group cursor-pointer">
+                 <!-- Inline SVG Logo for Footer -->
+                 <svg viewBox="0 0 360 90" class="h-10 w-auto opacity-90 group-hover:opacity-100 transition-opacity" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g transform="translate(15, 10)">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M35 10C21.1929 10 10 21.1929 10 35C10 48.8071 21.1929 60 35 60C48.8071 60 60 48.8071 60 35C60 21.1929 48.8071 10 35 10ZM35 22C27.8203 22 22 27.8203 22 35C22 42.1797 27.8203 48 35 48C42.1797 48 48 42.1797 48 35C48 27.8203 42.1797 22 35 22Z" fill="#D4FF00"/>
+                        <path d="M35 10 C 20 10, 5 18, -5 30" stroke="#D4FF00" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+                        <circle cx="-5" cy="30" r="4" fill="#D4FF00"/>
+                        <path d="M35 60 C 50 60, 65 52, 75 40" stroke="#D4FF00" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+                        <circle cx="75" cy="40" r="4" fill="#D4FF00"/>
+                    </g>
+                    <text x="105" y="52" font-family="'Space Grotesk', sans-serif" font-size="44" font-weight="700" fill="#FFFFFF">SyncKhafi</text>
+                    <text x="110" y="74" font-family="'Inter', sans-serif" font-size="13" font-weight="500" letter-spacing="0.45em" fill="#D4FF00">Technologies.</text>
+                </svg>
+            </div>
+            <div class="text-sm text-khafi-muted flex gap-6">
+                <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+                <a href="#" class="hover:text-white transition-colors">Terms of Service</a>
+            </div>
+            <div class="text-sm text-khafi-muted">
+                &copy; <script>document.write(new Date().getFullYear())</script> SyncKhafi Technologies. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- 1. Three.js Hero Orbital Animation ---
+        const initThreeJS = () => {
+            const container = document.getElementById('canvas-container');
+            if (!container) return;
+
+            const scene = new THREE.Scene();
+            // Optional subtle fog for depth
+            scene.fog = new THREE.FogExp2(0x050505, 0.002);
+
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 30;
+
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // performance
+            container.appendChild(renderer.domElement);
+
+            // Group to hold our orbital rings
+            const systemGroup = new THREE.Group();
+            scene.add(systemGroup);
+
+            // Colors based on theme
+            const colorAccent = new THREE.Color('#D4FF00');
+            const colorWhite = new THREE.Color('#FFFFFF');
+
+            // Function to create a dotted/dashed ring
+            const createOrbitalRing = (radius, tiltX, tiltY, isAccent, speed) => {
+                const geometry = new THREE.TorusGeometry(radius, 0.05, 16, 100);
+                
+                // Use Points material to look like connected nodes/data streams instead of a solid line
+                const edges = new THREE.EdgesGeometry(geometry);
+                const material = new THREE.LineBasicMaterial({ 
+                    color: isAccent ? colorAccent : colorWhite,
+                    transparent: true,
+                    opacity: isAccent ? 0.8 : 0.2,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                const ring = new THREE.LineSegments(edges, material);
+                
+                ring.rotation.x = tiltX;
+                ring.rotation.y = tiltY;
+                
+                // Add some glowing "nodes" on the ring
+                const nodeGeo = new THREE.SphereGeometry(0.3, 8, 8);
+                const nodeMat = new THREE.MeshBasicMaterial({ 
+                    color: isAccent ? colorAccent : colorWhite,
+                    transparent: true,
+                    opacity: 0.9,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                // Add two nodes on opposite sides
+                const node1 = new THREE.Mesh(nodeGeo, nodeMat);
+                node1.position.x = radius;
+                ring.add(node1);
+                
+                const node2 = new THREE.Mesh(nodeGeo, nodeMat);
+                node2.position.x = -radius;
+                ring.add(node2);
+
+                return { mesh: ring, speed: speed };
+            };
+
+            const rings = [
+                createOrbitalRing(15, Math.PI/3, Math.PI/4, true, 0.002),
+                createOrbitalRing(22, -Math.PI/4, Math.PI/6, false, -0.0015),
+                createOrbitalRing(28, Math.PI/2.5, -Math.PI/3, false, 0.001)
+            ];
+
+            rings.forEach(r => systemGroup.add(r.mesh));
+
+            // Floating particles in background
+            const particlesGeometry = new THREE.BufferGeometry();
+            const particlesCount = 500;
+            const posArray = new Float32Array(particlesCount * 3);
+            
+            for(let i = 0; i < particlesCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 100;
+            }
+            
+            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const particlesMaterial = new THREE.PointsMaterial({
+                size: 0.1,
+                color: colorAccent,
+                transparent: true,
+                opacity: 0.3,
+                blending: THREE.AdditiveBlending
+            });
+            
+            const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+            scene.add(particlesMesh);
+
+            // Mouse interaction setup
+            let mouseX = 0;
+            let mouseY = 0;
+            let targetX = 0;
+            let targetY = 0;
+
+            const windowHalfX = window.innerWidth / 2;
+            const windowHalfY = window.innerHeight / 2;
+
+            document.addEventListener('mousemove', (event) => {
+                mouseX = (event.clientX - windowHalfX) * 0.0005;
+                mouseY = (event.clientY - windowHalfY) * 0.0005;
+            });
+
+            // Animation Loop
+            const clock = new THREE.Clock();
+
+            const animate = () => {
+                requestAnimationFrame(animate);
+                
+                const elapsedTime = clock.getElapsedTime();
+
+                // Rotate rings
+                rings.forEach(r => {
+                    r.mesh.rotation.z += r.speed;
+                });
+
+                // Rotate particle background slowly
+                particlesMesh.rotation.y = elapsedTime * 0.05;
+
+                // Smooth mouse follow for the whole group
+                targetX = mouseX * 0.5;
+                targetY = mouseY * 0.5;
+                
+                systemGroup.rotation.y += 0.05 * (targetX - systemGroup.rotation.y);
+                systemGroup.rotation.x += 0.05 * (targetY - systemGroup.rotation.x);
+
+                renderer.render(scene, camera);
+            };
+
+            // Handle Resize
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            animate();
+        };
+
+        // --- 2. Scroll Reveal Animations ---
+        const initScrollReveal = () => {
+            const reveals = document.querySelectorAll('.reveal');
+            
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.15 // Trigger when 15% visible
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        observer.unobserve(entry.target); // Run once
+                    }
+                });
+            }, observerOptions);
+
+            reveals.forEach(reveal => {
+                observer.observe(reveal);
+            });
+        };
+
+        // --- 3. Tab Logic ---
+        const initTabs = () => {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Remove active from all
+                    tabBtns.forEach(b => {
+                        b.classList.remove('active', 'bg-khafi-surface', 'border-khafi-accent/30', 'text-white');
+                        b.classList.add('text-khafi-muted', 'border-transparent');
+                    });
+                    tabContents.forEach(c => {
+                        c.classList.remove('active');
+                    });
+
+                    // Add active to clicked
+                    btn.classList.add('active', 'bg-khafi-surface', 'border-khafi-accent/30', 'text-white');
+                    btn.classList.remove('text-khafi-muted', 'border-transparent');
+                    
+                    const targetId = btn.getAttribute('data-target');
+                    document.getElementById(targetId).classList.add('active');
+                });
+            });
+        };
+
+        // --- 4. Navbar Scroll Effect ---
+        const initNavbar = () => {
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('py-0');
+                    navbar.querySelector('.glass-panel').style.background = 'rgba(5, 5, 5, 0.9)';
+                } else {
+                    navbar.classList.remove('py-0');
+                    navbar.querySelector('.glass-panel').style.background = 'rgba(17, 17, 17, 0.6)';
+                }
+            });
+        };
+
+        // Initialize everything on load
+        window.onload = () => {
+            initThreeJS();
+            initScrollReveal();
+            initTabs();
+            initNavbar();
+        };
+    </script>
+</body>
+</html>
